@@ -103,7 +103,11 @@ public class MainActivity extends Activity {
         if (stack.size() > 1) {
             TextView back = textView("← Voltar", 16, ACCENT, true);
             back.setPadding(0, 0, 0, dp(12));
-            back.setOnClickListener(v -> goBack());
+            back.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    goBack();
+                }
+            });
             root.addView(back);
         }
 
@@ -217,16 +221,16 @@ public class MainActivity extends Activity {
     private void buildHome(LinearLayout root) {
         root.addView(textView("Plano pessoal de treino e alimentação", 14, TEXT_SECONDARY, false));
         spacer(root, 12);
-        addMenuItem(root, "Treinos", "Dias de treino e exercícios", () -> navigate(new Screen("workoutList")));
-        addMenuItem(root, "Refeições", "Pequeno-almoço, almoço, lanche, jantar...", () -> navigate(new Screen("mealSlotList")));
-        addMenuItem(root, "Receitas", "Receitas detalhadas com preparação", () -> navigate(new Screen("recipeList")));
-        addMenuItem(root, "Suplementos", "Informação sobre suplementação", () -> navigate(new Screen("infoList", "supplements")));
-        addMenuItem(root, "Notas gerais", "Água, refeições e regras do plano", () -> navigate(new Screen("infoList", "notes")));
+        addMenuItem(root, "Treinos", "Dias de treino e exercícios", new Screen("workoutList"));
+        addMenuItem(root, "Refeições", "Pequeno-almoço, almoço, lanche, jantar...", new Screen("mealSlotList"));
+        addMenuItem(root, "Receitas", "Receitas detalhadas com preparação", new Screen("recipeList"));
+        addMenuItem(root, "Suplementos", "Informação sobre suplementação", new Screen("infoList", "supplements"));
+        addMenuItem(root, "Notas gerais", "Água, refeições e regras do plano", new Screen("infoList", "notes"));
     }
 
     private void buildWorkoutList(LinearLayout root) {
         for (WorkoutDay w : PlanData.WORKOUTS) {
-            addListCard(root, w.title, w.subtitle, () -> navigate(new Screen("workoutDetail", w.id)));
+            addListCard(root, w.title, w.subtitle, new Screen("workoutDetail", w.id));
         }
     }
 
@@ -249,17 +253,20 @@ public class MainActivity extends Activity {
         button.setGravity(Gravity.CENTER);
         button.setBackgroundColor(ACCENT);
         button.setPadding(dp(16), dp(14), dp(16), dp(14));
-        button.setOnClickListener(v -> {
-            boolean newDone = !prefs.getBoolean("workout_done_" + w.id, false);
-            prefs.edit().putBoolean("workout_done_" + w.id, newDone).apply();
-            render();
+        final String workoutId = w.id;
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                boolean newDone = !prefs.getBoolean("workout_done_" + workoutId, false);
+                prefs.edit().putBoolean("workout_done_" + workoutId, newDone).apply();
+                render();
+            }
         });
         root.addView(button);
     }
 
     private void buildMealSlotList(LinearLayout root) {
         for (MealSlot slot : PlanData.MEAL_SLOTS) {
-            addListCard(root, slot.title, slot.options.size() + " opções", () -> navigate(new Screen("mealOptionList", slot.id)));
+            addListCard(root, slot.title, slot.options.size() + " opções", new Screen("mealOptionList", slot.id));
         }
     }
 
@@ -271,7 +278,7 @@ public class MainActivity extends Activity {
             spacer(root, 8);
         }
         for (MealOption o : slot.options) {
-            addListCard(root, o.name, null, () -> navigate(new Screen("mealOptionDetail", slot.id, o.id)));
+            addListCard(root, o.name, null, new Screen("mealOptionDetail", slot.id, o.id));
         }
     }
 
@@ -302,7 +309,7 @@ public class MainActivity extends Activity {
 
     private void buildRecipeList(LinearLayout root) {
         for (Recipe r : PlanData.RECIPES) {
-            addListCard(root, r.title, r.source, () -> navigate(new Screen("recipeDetail", r.id)));
+            addListCard(root, r.title, r.source, new Screen("recipeDetail", r.id));
         }
         if (!PlanData.RECIPE_TITLES_WITHOUT_DETAIL.isEmpty()) {
             spacer(root, 8);
@@ -336,7 +343,7 @@ public class MainActivity extends Activity {
 
     private void buildInfoList(LinearLayout root, String key) {
         for (InfoItem item : infoListFor(key)) {
-            addListCard(root, item.title, null, () -> navigate(new Screen("infoDetail", key, item.id)));
+            addListCard(root, item.title, null, new Screen("infoDetail", key, item.id));
         }
     }
 
@@ -347,10 +354,6 @@ public class MainActivity extends Activity {
     }
 
     // ---------------- WIDGET HELPERS ----------------
-
-    private interface Action {
-        void run();
-    }
 
     private TextView textView(String text, int spSize, int color, boolean bold) {
         TextView tv = new TextView(this);
@@ -379,7 +382,7 @@ public class MainActivity extends Activity {
         return card;
     }
 
-    private void addListCard(LinearLayout root, String title, String subtitle, Action onClick) {
+    private void addListCard(LinearLayout root, String title, String subtitle, final Screen target) {
         LinearLayout card = card();
         card.setClickable(true);
         card.setFocusable(true);
@@ -389,12 +392,16 @@ public class MainActivity extends Activity {
             sub.setPadding(0, dp(4), 0, 0);
             card.addView(sub);
         }
-        card.setOnClickListener(v -> onClick.run());
+        card.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                navigate(target);
+            }
+        });
         root.addView(card);
     }
 
-    private void addMenuItem(LinearLayout root, String title, String subtitle, Action onClick) {
-        addListCard(root, title, subtitle, onClick);
+    private void addMenuItem(LinearLayout root, String title, String subtitle, Screen target) {
+        addListCard(root, title, subtitle, target);
     }
 
     private LinearLayout noteBox(String text) {
