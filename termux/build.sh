@@ -31,7 +31,7 @@ aapt2 link \
     --manifest "$PROJECT/AndroidManifest.xml" \
     --java "$GEN" \
     -o "$APK_DIR/app-unaligned.apk" \
-    --min-sdk-version 21 --target-sdk-version 33
+    --min-sdk-version 21 --target-sdk-version 35
 
 echo "=== Passo 2/5: Compilar Java (javac) ==="
 JAVA_FILES=$(find "$PROJECT/src" -name "*.java")
